@@ -1,0 +1,164 @@
+---
+title: "Comprehensive Guide to Setting Up Redis Caching in Spring Boot"
+description: "A step-by-step guide on configuring Redis as a caching layer in Spring Boot applications. Learn about dependencies, YAML setup, and practical usage of caching annotations such as @Cacheable and @CacheEvict."
+thumbnail: "assets/setup-redis-for-caching-in-spring/redis_logo.png"
+datetime: "2025-05-04T19:05:00"
+author: "Duc Le"
+tags:
+  - java
+  - spring
+  - spring-boot
+  - redis
+  - caching
+  - performance
+  - microservices
+  - backend
+  - database
+---
+
+<h1 className="text-4xl text-center mb-16">Comprehensive Guide to Setting Up Redis Caching in Spring Boot</h1>
+
+Caching is a powerful technique to improve the performance and scalability of your application. In this guide, we will walk through how to configure Redis for caching in a Spring Boot application. We will explore the required dependencies, YAML configuration, and how to apply caching annotations to your services.
+
+---
+
+## 🔧 Required Dependencies
+
+To enable Redis caching in a Spring Boot application, make sure to include the following dependencies in your project:
+
+### **Maven** (`pom.xml`):
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+</dependencies>
+```
+---
+## ⚙️ Configuring Redis for Caching
+
+In order to use Redis effectively, you need to configure how values are serialized and cached.
+
+### Java Configuration Class:
+
+```java
+@Configuration
+@EnableCaching // Enables Spring's annotation-driven cache management
+public class CacheConfig {
+
+    @Bean
+    public RedisCacheConfiguration cacheConfiguration() {
+        return RedisCacheConfiguration.defaultCacheConfig()
+            .serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(
+                    new GenericJackson2JsonRedisSerializer()));
+    }
+}
+```
+
+* `@EnableCaching` enables annotation-based caching.
+* `GenericJackson2JsonRedisSerializer` is used to serialize values to JSON, ensuring readability and compatibility.
+
+---
+## 🛠️ Configuring `application.yml` for Redis Caching
+
+Ensure your `application.yml` file specifies that Redis is the caching provider:
+
+```yaml
+spring:
+  cache:
+    type: redis
+  redis:
+    host: localhost
+    port: 6379
+```
+
+> You may also want to configure Redis connection timeout, password, and other pool settings if you're running in production.
+---
+
+## 💡 Using `@Cacheable` and `@CacheEvict` in Services
+
+Spring provides a set of annotations to simplify cache usage.
+
+### `@Cacheable` – Cache Method Results
+
+Use `@Cacheable` when you want to cache the result of a method. Spring will check the cache first before executing the method.
+
+```java
+@Service
+@RequiredArgsConstructor
+public class UserCacheService {
+
+    private final UserRepository userRepository;
+    private final UserCacheDTOMapper userCacheDTOMapper;
+
+    @Cacheable(value = "userById", key = "#id", unless = "#result == null")
+    public UserCacheDTO getUserById(Long id) {
+        return userCacheDTOMapper.toUserCacheDTO(
+            userRepository.findById(id).orElse(null)
+        );
+    }
+}
+```
+
+**Explanation:**
+
+* `value = "userById"` defines the cache name.
+* `key = "#id"` tells Spring to use the `id` as the key.
+* `unless = "#result == null"` prevents caching if the result is null.
+
+---
+
+### `@CacheEvict` – Invalidate Cache When Data Changes
+
+Use `@CacheEvict` to remove entries from the cache when the data is modified.
+
+```java
+@Caching(evict = {
+    @CacheEvict(value = "userByUsername", key = "#username"),
+    @CacheEvict(value = "userExistsByUsername", key = "#username")
+})
+public void createUser(String username, String password, Role role) {
+    userRepository.save(new User(username, password, role));
+}
+```
+
+**Explanation:**
+
+* This example removes related cache entries when a new user is created to prevent stale data.
+
+---
+
+## ✅ Summary
+
+By following this guide, you have:
+
+* Integrated the required dependencies for Redis caching in Spring Boot.
+* Configured Redis and serialization for proper caching behavior.
+* Applied `@Cacheable` and `@CacheEvict` annotations to cache and invalidate data effectively.
+
+Caching with Redis is a great way to improve the performance of your application, especially in microservices and data-intensive systems. It minimizes database hits and increases response time.
+
+---
+
+## 💻 Pro Tips
+
+* Consider using `@CachePut` if you want to update the cache without evicting it.
+* Use a **Time-to-Live (TTL)** on your Redis keys for automatic expiration.
+
+---
+## 📌 Real-World Usage
+
+This Kafka configuration is part of the actual implementation of the [Chat Service](https://www.ducle.online/projects/chat-system/chat-service).
+
+---
+## ✍️ Author
+
+**Le Minh Duc**
+A passionate Java & Spring developer building scalable microservices.
+
