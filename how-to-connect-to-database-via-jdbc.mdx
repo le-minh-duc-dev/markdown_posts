@@ -1,0 +1,205 @@
+---
+title: "How to Connect to a PostgreSQL Database via JDBC in Java"
+description: "Learn how to connect a Java application to a PostgreSQL database using JDBC. This step-by-step tutorial covers Maven setup, connection handling, query execution, and best practices for beginners."
+thumbnail: "assets/how-to-connect-to-database-via-jdbc/postgresql_logo.svg"
+datetime: "2025-05-20T20:26:00"
+author: "Duc Le"
+tags:
+  - java
+  - database
+  - postgreSQL
+  - jdbc
+  - connections
+---
+
+<h1 className="text-4xl text-center mb-16">How to Connect to a PostgreSQL Database via JDBC in Java</h1>
+
+
+In this tutorial, I’ll walk you through the process of connecting a Java application to a PostgreSQL database using JDBC (Java Database Connectivity). This guide is ideal for beginners who want a hands-on introduction to JDBC in a Maven-based Java project.
+
+---
+
+## ✅ Prerequisites
+
+Make sure:
+
+* PostgreSQL is **installed and running** on your system.
+* You have Java and Maven installed.
+* You know your database name, username, and password.
+
+---
+
+## 1. Create a Maven Project and Add the PostgreSQL JDBC Driver
+
+### 🛠 Step 1.1 – Create a New Maven Project
+
+You can generate a simple Maven project using the command below:
+
+```bash
+mvn archetype:generate \
+  -DgroupId=com.mycompany.app \
+  -DartifactId=my-app \
+  -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DarchetypeVersion=1.5 \
+  -DinteractiveMode=false
+```
+
+### 🧩 Step 1.2 – Add the PostgreSQL JDBC Driver to `pom.xml`
+
+Open the `pom.xml` file and add the following dependency:
+
+```xml
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.7.5</version>
+</dependency>
+```
+
+This dependency ensures that the PostgreSQL driver will be downloaded and included in your classpath.
+
+---
+
+## 2. Define the Database Connection Details
+
+Inside your Java file (e.g., `Main.java`), define the JDBC URL, username, and password:
+
+```java
+String url = "jdbc:postgresql://localhost:5432/auth_service_db";
+String user = "your_username";
+String password = "your_password";
+```
+
+> 🛑 **Security Tip**: Avoid hardcoding sensitive credentials in production. Use environment variables or a secure config management solution.
+
+---
+
+## 3. Establish a Connection to the Database
+
+Wrap your JDBC logic in a `try-catch` block to handle potential errors gracefully.
+
+```java
+try {
+    Connection conn = DriverManager.getConnection(url, user, password);
+```
+
+* `DriverManager.getConnection()` searches for a suitable JDBC driver (which we added via Maven) and attempts to connect using the credentials and URL.
+
+---
+
+## 4. Define an SQL Query
+
+Let’s define a simple SQL query to select all records from the `users` table:
+
+```java
+    String query = "SELECT * FROM users";
+```
+
+> This assumes you have a table named `users` in your `auth_service_db` database.
+
+---
+
+## 5. Create a Statement Object
+
+```java
+    Statement stmt = conn.createStatement();
+```
+
+* The `Statement` object allows you to send SQL queries to the database.
+
+---
+
+## 6. Execute the Query and Retrieve the Results
+
+```java
+    ResultSet rs = stmt.executeQuery(query);
+```
+
+* `executeQuery()` sends the SQL statement to the database.
+* The returned `ResultSet` holds the data retrieved from the database.
+
+---
+
+## 7. Process the Result Set
+
+```java
+    while (rs.next()) {
+        System.out.println("User: " + rs.getString("username"));
+        System.out.println("Password: " + rs.getString("password"));
+    }
+```
+
+* `rs.next()` moves the cursor forward one row at a time.
+* You can extract values by passing column names or indexes to `getString()`, `getInt()`, etc.
+
+---
+
+## 8. Clean Up Resources
+
+Always close resources to avoid memory leaks and connection pool exhaustion.
+
+```java
+    rs.close();
+    stmt.close();
+    conn.close();
+} catch (Exception e) {
+    e.printStackTrace();
+}
+```
+
+> 🧹 JDBC resources like `ResultSet`, `Statement`, and `Connection` should be closed in reverse order of their creation, preferably in a `finally` block or using **try-with-resources** (Java 7+).
+
+---
+
+## 💡 Final Code Sample
+
+Here is a complete version for easy reference:
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+public class Main {
+    public static void main(String[] args) {
+        String url = "jdbc:postgresql://localhost:5432/auth_service_db";
+        String user = "minhduc8a2";
+        String password = "123456";
+
+        try {
+            Connection conn = DriverManager.getConnection(url, user, password);
+            String query = "SELECT * FROM users";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+
+            while (rs.next()) {
+                System.out.println("User: " + rs.getString("username"));
+                System.out.println("Password: " + rs.getString("password"));
+            }
+
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+## 📌 Summary
+
+* JDBC is the standard Java API for database connectivity.
+* Use Maven to manage dependencies easily.
+* Always handle exceptions and close your resources.
+* Avoid hardcoding credentials in real-world applications.
+
+---
+
+## ✍️ Author
+
+**Le Minh Duc**
+A passionate Java & Spring developer building scalable microservices.
